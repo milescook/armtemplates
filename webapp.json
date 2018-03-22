@@ -1,0 +1,101 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appname": {
+      "type": "String"
+    },
+    "stagingslot": {
+      "defaultValue": "No",
+      "type": "String"
+    },
+
+    "storageaccountname": {
+      "type": "String"
+    },
+    "webinstancecount": {
+      "defaultValue": "1",
+      "type": "String"
+    },
+    "webinstancesize": {
+      "defaultValue": "S1",
+      "type": "String"
+    },
+    "failureAlerts": {
+      "defaultValue": "Yes",
+      "type": "String"
+    },
+    "failureThreshold5Min": {
+      "defaultValue": 5,
+      "type": "Int"
+    },
+    "Database": {
+      "defaultValue": "AzureStorageTable",
+      "type":  "String" 
+    }
+  },
+    "variables": {
+        "webAppSuffixes": [
+            "ukw"
+        ],
+        "webAppLocations": [
+            "ukwest"
+        ]
+    },
+  "resources": [
+     {
+      "type": "Microsoft.Web/sites",
+      "kind": "app",
+      "name": "[concat(parameters('appname'),'-as-', variables('webAppSuffixes')[copyIndex()])]",
+      "apiVersion": "2015-08-01",
+      "location": "[variables('webAppLocations')[copyIndex()]]",
+      "copy": {
+        "name": "siteloop",
+        "count": "[length(variables('webAppLocations'))]"
+      },
+      "tags": {},
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', concat(parameters('appname'), '-', variables('webAppSuffixes')[copyIndex()]))]",
+        "reserved": false,
+        "scmSiteAlsoStopped": false,
+        "clientAffinityEnabled": false,
+        "clientCertEnabled": false,
+        "hostNamesDisabled": false,
+        "containerSize": 0,
+        "dailyMemoryTimeQuota": 0,
+        "httpsOnly": "true",
+        "failedRequestsTracing": {
+          "enabled": true
+        },
+        "detailedErrorMessages": {
+          "enabled": true
+        },
+        "siteConfig": {}
+      }
+	  },
+	  {
+      "type": "Microsoft.Web/serverfarms",
+      "sku": {
+        "name": "[parameters('webinstancesize')]",
+        "tier": "Standard",
+        "capacity": "[parameters('webinstancecount')]",
+        "size": "[parameters('webinstancesize')]"
+      },
+      "kind": "app",
+      "name": "[concat(parameters('appname'),'-', variables('webAppSuffixes')[copyIndex()])]",
+      "apiVersion": "2016-09-01",
+      "location": "[variables('webAppLocations')[copyIndex()]]",
+      "copy": {
+        "name": "farmloop",
+        "count": "[length(variables('webAppLocations'))]"
+      },
+      "properties": {
+        "name": "[concat(parameters('appname'),'-', variables('webAppSuffixes')[copyIndex()])]"
+      },
+      "dependsOn": []
+    }
+      
+  ],
+    "outputs": {}
+}
